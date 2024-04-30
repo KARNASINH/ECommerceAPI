@@ -140,5 +140,25 @@ namespace ECommerceAPI.Data
                 }
             }
         }
+
+        //This method do a Soft Delete of the specified product.
+        public async Task DeleteProductAsync(int productId)
+        {
+            //T-SQL query to update "0" in a "IsDeleted" column in the Database
+            var query = "UPDATE Products SET IsDeleted = 1 WHERE ProductId = @ProductId";
+            
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+            
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@ProductId", productId);
+
+                    //ExecuteNonQueryAsync method returns how many rows are affected in the database
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
     }
 }
