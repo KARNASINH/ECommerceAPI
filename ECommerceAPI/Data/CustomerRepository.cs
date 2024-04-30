@@ -24,6 +24,7 @@ namespace ECommerceAPI.Data
             using (var connection = _connectionFactory.CreateConnection())
             {
                 await connection.OpenAsync();
+                
                 using (var command = new SqlCommand(query, connection))
                 {
                     //Asynchrouse operation to fetch the data.
@@ -43,8 +44,46 @@ namespace ECommerceAPI.Data
                     }
                 }
             }
-            //Returns the List of Students.
+            //Returns the List of Customers.
             return customers;
+        }
+
+        //This method returns the data based on the specified Custoemr ID.
+        public async Task<Customer?> GetCustomerByIdAsync(int customerId)
+        {
+            //T-SQL Query to get the specified Customer.
+            var query = "SELECT CustomerId, Name, Email, Address FROM Customers WHERE CustomerId = @CustomerId AND IsDeleted = 0";
+            
+            Customer? customer = null;
+
+            //Establishes the connection with the SQL DB and executes the T-SQL Query.
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+             
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@CustomerId", customerId);
+
+                    //Asynchrouse operation to fetch the data.
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            customer = new Customer
+                            {
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name")),
+                                Email = reader.GetString(reader.GetOrdinal("Email")),
+                                Address = reader.GetString(reader.GetOrdinal("Address")),
+                                IsDeleted = false
+                            };
+                        }
+                    }
+                }
+            }
+            //Returns the Customer.
+            return customer;
         }
     }
 }
