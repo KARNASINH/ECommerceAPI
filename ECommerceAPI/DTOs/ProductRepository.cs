@@ -87,5 +87,33 @@ namespace ECommerceAPI.DTOs
             //Returns the product.
             return product;
         }
+
+        //This method inserts a new Product in the database.
+        public async Task<int> InsertProductAsync(ProductDTO product)
+        {
+            //T-SQL query to insert the data into Database.
+            var query = @"INSERT INTO Products (Name, Price, Quantity, Description, IsDeleted)
+                        VALUES (@Name, @Price, @Quantity, @Description, 0);
+                        SELECT CAST(SCOPE_IDENTITY() as int);";
+            
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+            
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Name", product.Name);
+                    command.Parameters.AddWithValue("@Price", product.Price);
+                    command.Parameters.AddWithValue("@Quantity", product.Quantity);
+                    command.Parameters.AddWithValue("@Description", product.Description ?? (object)DBNull.Value);
+
+                    //ExecuteScalarAsync method capture the value returned by SCOPE_IDENTITY() which tells which Product Id is inseted last.
+                    int productId = (int)await command.ExecuteScalarAsync();
+                    
+                    //Return last inserted Product Id.
+                    return productId;
+                }
+            }
+        }
     }
 }
