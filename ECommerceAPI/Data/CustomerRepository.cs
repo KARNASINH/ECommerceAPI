@@ -87,7 +87,7 @@ namespace ECommerceAPI.Data
             return customer;
         }
 
-        // This method inserts a new Customer and return the created Customer ID
+        //This method inserts a new Customer and return the created Customer ID
         public async Task<int> InsertCustomerAsync(CustomerDTO customer)
         {
             var query = @"INSERT INTO Customers (Name, Email, Address, IsDeleted)
@@ -108,6 +108,30 @@ namespace ECommerceAPI.Data
                     int customerId = (int)await command.ExecuteScalarAsync();
                     
                     return customerId;
+                }
+            }
+        }
+
+        //This method updates Customer details in the Database.
+        public async Task UpdateCustomerAsync(CustomerDTO customer)
+        {
+            //T-SQL Query
+            var query = "UPDATE Customers SET Name = @Name, Email = @Email, Address = @Address WHERE CustomerId = @CustomerId";
+            
+            //Establishing connection and perforing Update operation.
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+                
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@CustomerId", customer.CustomerId);
+                    command.Parameters.AddWithValue("@Name", customer.Name);
+                    command.Parameters.AddWithValue("@Email", customer.Email);
+                    command.Parameters.AddWithValue("@Address", customer.Address);
+
+                    //ExecuteNonQueryAsync method returns if any row is modified in the Database.
+                    await command.ExecuteNonQueryAsync();
                 }
             }
         }
