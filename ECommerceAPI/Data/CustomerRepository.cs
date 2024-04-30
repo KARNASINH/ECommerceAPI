@@ -135,5 +135,25 @@ namespace ECommerceAPI.Data
                 }
             }
         }
+
+        //This method deletes the Customer from the Database.
+        public async Task DeleteCustomerAsync(int customerId)
+        {
+            //T-SQL query to delete the Customer from the database.
+            var query = "UPDATE Customers SET IsDeleted = 1 WHERE CustomerId = @CustomerId";
+            
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+                
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@CustomerId", customerId);
+
+                    //ExecuteNonQueryAsync method returns if any row is affected in the Database.
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        }
     }
 }
