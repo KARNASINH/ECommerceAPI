@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ECommerceAPI.DTOs
+namespace ECommerceAPI.DTO
 {
     //This class represents the Items along with Quantity of the Order.
     public class OrderItemDetailsDTO

@@ -1,4 +1,4 @@
-﻿namespace ECommerceAPI.DTOs
+﻿namespace ECommerceAPI.DTO
 {
     //This class holds the infromation whenever we confirm/Place the Order.
     public class ConfirmOrderResponseDTO

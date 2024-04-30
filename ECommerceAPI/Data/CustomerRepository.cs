@@ -1,4 +1,4 @@
-﻿using ECommerceAPI.DTOs;
+﻿using ECommerceAPI.DTO;
 using ECommerceAPI.Models;
 using Microsoft.Data.SqlClient;
 

@@ -1,4 +1,4 @@
-﻿namespace ECommerceAPI.DTOs
+﻿namespace ECommerceAPI.DTO
 {
     //This class stores the Order status Response infromation whenver we update Order Status.
     public class OrderStatusResponseDTO
