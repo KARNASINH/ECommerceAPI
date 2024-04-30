@@ -1,4 +1,5 @@
-﻿using ECommerceAPI.Models;
+﻿using ECommerceAPI.DTOs;
+using ECommerceAPI.Models;
 using Microsoft.Data.SqlClient;
 
 namespace ECommerceAPI.Data
@@ -84,6 +85,31 @@ namespace ECommerceAPI.Data
             }
             //Returns the Customer.
             return customer;
+        }
+
+        // This method inserts a new Customer and return the created Customer ID
+        public async Task<int> InsertCustomerAsync(CustomerDTO customer)
+        {
+            var query = @"INSERT INTO Customers (Name, Email, Address, IsDeleted)
+                        VALUES (@Name, @Email, @Address, 0);
+                        SELECT CAST(SCOPE_IDENTITY() as int);";
+            
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+            
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Name", customer.Name);
+                    command.Parameters.AddWithValue("@Email", customer.Email);
+                    command.Parameters.AddWithValue("@Address", customer.Address);
+
+                    //ExecuteScalar is used to get the value generted by SCOPE_IDENTITY() function
+                    int customerId = (int)await command.ExecuteScalarAsync();
+                    
+                    return customerId;
+                }
+            }
         }
     }
 }
