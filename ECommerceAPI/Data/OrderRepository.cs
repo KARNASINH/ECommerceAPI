@@ -309,5 +309,113 @@ namespace ECommerceAPI.Data
             }
         }
 
+        //This method checks the Current status of the Order based on the passed Order Id and update it according to passed New Order Status if transition is possible.
+        public async Task<OrderStatusResponseDTO> UpdateOrderStatusAsync(int orderId, string newStatus)
+        {
+            //Creates an OrderStatusResponseDTO
+            OrderStatusResponseDTO orderStatusDTO = new OrderStatusResponseDTO()
+            {
+                OrderId = orderId
+            };
+
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+            
+                try
+                {
+                    //Fetches the current status of the Order
+                    var currentStatusQuery = "SELECT Status FROM Orders WHERE OrderId = @OrderId";
+                
+                    string currentStatus;
+                    
+                    using (var statusCommand = new SqlCommand(currentStatusQuery, connection))
+                    {
+                        statusCommand.Parameters.AddWithValue("@OrderId", orderId);
+                    
+                        //Fetches the status an storing into variable
+                        var result = await statusCommand.ExecuteScalarAsync();
+                        
+                        if (result == null)
+                        {
+                            orderStatusDTO.Message = "Order not found.";
+                            orderStatusDTO.IsUpdated = false;
+                        
+                            return orderStatusDTO;
+                        }
+                        
+                        currentStatus = result.ToString();
+                    }
+                    
+                    //Checks the Order Status transition is valid or not.
+                    //If the transition is valid then it applies otherwise it will reject it.
+                    if (!IsValidStatusTransition(currentStatus, newStatus))
+                    {
+                        orderStatusDTO.Message = $"Invalid status transition from {currentStatus} to {newStatus}.";
+                        orderStatusDTO.IsUpdated = false;
+                    
+                        return orderStatusDTO;
+                    }
+                    
+                    //T-SQL query to update the Order status in the database
+                    var updateStatusQuery = "UPDATE Orders SET Status = @NewStatus WHERE OrderId = @OrderId";
+                    
+                    //
+                    using (var updateCommand = new SqlCommand(updateStatusQuery, connection))
+                    {
+                        updateCommand.Parameters.AddWithValue("@OrderId", orderId);
+                        updateCommand.Parameters.AddWithValue("@NewStatus", newStatus);
+                        
+                        //T-SQL query executing to update the status of the Order in the database
+                        int rowsAffected = await updateCommand.ExecuteNonQueryAsync();
+                        
+                        if (rowsAffected > 0)
+                        {
+                            orderStatusDTO.Message = $"Order status updated to {newStatus}";
+                            orderStatusDTO.Status = newStatus;
+                            orderStatusDTO.IsUpdated = true;
+                        }
+                        else
+                        {
+                            orderStatusDTO.IsUpdated = false;
+                            orderStatusDTO.Message = $"No order found with ID {orderId}";
+                        }
+                    }
+
+                    //Returns the Order status updation object
+                    return orderStatusDTO;
+                }
+                catch (Exception ex)
+                {
+                    //Throws the error if it founds the error while updating the Order Status
+                    throw new Exception("Error updating order status: " + ex.Message, ex);
+                }
+            }
+
+        }
+
+        //This method takes Current and New Order status to update.
+        //Based on the current status it allows to update status to the specific values
+        private bool IsValidStatusTransition(string currentStatus, string newStatus)
+        {
+            //This check and allows to update the status to the specific values only
+            switch (currentStatus)
+            {
+                case "Pending":
+                    return newStatus == "Processing" || newStatus == "Cancelled";
+                case "Confirmed":
+                    return newStatus == "Processing";
+                case "Processing":
+                    return newStatus == "Delivered";
+                //Delivered orders should not transition to any other status
+                case "Delivered":
+                    return false;
+                 //Cancelled orders should not transition to any other status
+                case "Cancelled":
+                    return false;
+                default:
+                    return false;
+            }
+        }
     }
 }
