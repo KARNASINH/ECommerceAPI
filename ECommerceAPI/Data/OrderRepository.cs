@@ -417,5 +417,37 @@ namespace ECommerceAPI.Data
                     return false;
             }
         }
-    }
+
+        //This method get the Order Details based on passed Order Id
+        public async Task<Order?> GetOrderDetailsAsync(int orderId)
+        {
+            //T-SQL query to fetch the Order details based on the given Order Id
+            var query = "SELECT OrderId, CustomerId, TotalAmount, Status, OrderDate FROM Orders WHERE OrderId = @OrderId";
+
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+            
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@OrderId", orderId);
+                
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        //If Order is not found then returns null.
+                        if (!reader.Read()) return null;
+                    
+                        //Returns the Order details based on the given Order Id
+                        return new Order
+                        {
+                            OrderId = reader.GetInt32(reader.GetOrdinal("OrderId")),
+                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                            TotalAmount = reader.GetDecimal(reader.GetOrdinal("TotalAmount")),
+                            Status = reader.GetString(reader.GetOrdinal("Status")),
+                            OrderDate = reader.GetDateTime(reader.GetOrdinal("OrderDate"))
+                        };
+                    }
+                }
+            }
+        }
 }
