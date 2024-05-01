@@ -176,5 +176,138 @@ namespace ECommerceAPI.Data
                 }
             }
         }
+
+        //Confirms the Order if Payment is completed and matches with the Total Amount in the Order receipt.
+        public async Task<ConfirmOrderResponseDTO> ConfirmOrderAsync(int orderId)
+        {
+            // Queries to fetch order and payment details
+            var orderDetailsQuery = "SELECT TotalAmount FROM Orders WHERE OrderId = @OrderId";
+            
+            var paymentDetailsQuery = "SELECT Amount, Status FROM Payments WHERE OrderId = @OrderId";
+            
+            var updateOrderStatusQuery = "UPDATE Orders SET Status = 'Confirmed' WHERE OrderId = @OrderId";
+            
+            var getOrderItemsQuery = "SELECT ProductId, Quantity FROM OrderItems WHERE OrderId = @OrderId";
+            
+            var updateProductQuery = "UPDATE Products SET Quantity = Quantity - @Quantity WHERE ProductId = @ProductId";
+            
+            ConfirmOrderResponseDTO confirmOrderResponseDTO = new ConfirmOrderResponseDTO()
+            {
+                OrderId = orderId,
+            };
+            
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+               
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        //Declared variables to store the fetched values
+                        decimal orderAmount = 0m;
+                        decimal paymentAmount = 0m;
+                        string paymentStatus = string.Empty;
+                        
+                        //Fetches the Total Amount for the given order
+                        using (var orderCommand = new SqlCommand(orderDetailsQuery, connection, transaction))
+                        {
+                            orderCommand.Parameters.AddWithValue("@OrderId", orderId);
+                        
+                            using (var reader = await orderCommand.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    //Storing the Order's Total amount
+                                    orderAmount = reader.GetDecimal(reader.GetOrdinal("TotalAmount"));
+                                }
+                                reader.Close();
+                            }
+                        }
+                        
+                        //Retrives Amount and Status value from the Payment table
+                        using (var paymentCommand = new SqlCommand(paymentDetailsQuery, connection, transaction))
+                        {
+                            paymentCommand.Parameters.AddWithValue("@OrderId", orderId);
+                        
+                            using (var reader = await paymentCommand.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    paymentAmount = reader.GetDecimal(reader.GetOrdinal("Amount"));
+                                    paymentStatus = reader.GetString(reader.GetOrdinal("Status"));
+                                }
+
+                                reader.Close();
+                            }
+                        }
+                        
+                        //Checks if the Payment is completed and Order Amount is same as the Payment Amount for the given Order Id
+                        if (paymentStatus == "Completed" && paymentAmount == orderAmount)
+                        {
+                            // Update product quantities
+                            using (var itemCommand = new SqlCommand(getOrderItemsQuery, connection, transaction))
+                            {
+                                itemCommand.Parameters.AddWithValue("@OrderId", orderId);
+                            
+                                using (var reader = await itemCommand.ExecuteReaderAsync())
+                                {
+                                    //This will loop through all the Items for the given order and deduct the quantity from the Product table
+                                    while (reader.Read())
+                                    {
+                                        int productId = reader.GetInt32(reader.GetOrdinal("ProductId"));
+                                        int quantity = reader.GetInt32(reader.GetOrdinal("Quantity"));
+                                
+                                        using (var updateProductCommand = new SqlCommand(updateProductQuery, connection, transaction))
+                                        {
+                                            updateProductCommand.Parameters.AddWithValue("@ProductId", productId);
+                                            updateProductCommand.Parameters.AddWithValue("@Quantity", quantity);
+
+                                            //Executes the T-SQL query and deduct the quantity from the Product table
+                                            await updateProductCommand.ExecuteNonQueryAsync();
+                                        }
+                                    }
+                                    reader.Close();
+                                }
+                            }
+
+                            //Updates the Order status in the Orders Table, mark it as "Confirmed"
+                            using (var statusCommand = new SqlCommand(updateOrderStatusQuery, connection, transaction))
+                            {
+                                statusCommand.Parameters.AddWithValue("@OrderId", orderId);
+
+                                await statusCommand.ExecuteNonQueryAsync();
+                            }
+                            
+                            //Committing the Transaction if everything is well
+                            transaction.Commit();
+                            
+                            confirmOrderResponseDTO.IsConfirmed = true;
+                            confirmOrderResponseDTO.Message = "Order Confirmed Successfully.";
+                            
+                            return confirmOrderResponseDTO;
+                        }
+                        else
+                        {
+                            transaction.Rollback();
+                            
+                            confirmOrderResponseDTO.IsConfirmed = false;
+                            confirmOrderResponseDTO.Message = "Cannot Confirm Order: Either Payment is incomplete or Payment amount does not match the Order's Total Amount.";
+                            
+                            return confirmOrderResponseDTO;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        //Rolling back the Transaction and restoring the changes made in the Database for this Transaction.
+                        transaction.Rollback();
+                        
+                        //Throwing the Exception if not able to conforming the Order
+                        throw new Exception("Error Confirming Order: " + ex.Message);
+                    }
+                }
+            }
+        }
+
     }
 }
