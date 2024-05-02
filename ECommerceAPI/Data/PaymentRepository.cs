@@ -106,6 +106,7 @@ namespace ECommerceAPI.Data
             }
         }
 
+
         //This method checks the Payment type to generate the response
         private string SimulatePaymentGatewayInteraction(PaymentDTO paymentDto)
         {
@@ -122,5 +123,119 @@ namespace ECommerceAPI.Data
                     return "Failed"; //If the Payment Type is other than COD, CC or DC then reject it.
             }
         }
+        
+        
+        //This method Updates the Payment Status after checking several conditions
+        public async Task<UpdatePaymentResponseDTO> UpdatePaymentStatusAsync(int paymentId, string newStatus)
+        {
+            // T-SQL query to fetch the data from Payment and Order table (by Joining) based on the Payment Id.
+            var paymentDetailsQuery = "SELECT p.OrderId, p.Amount, p.Status, o.Status AS OrderStatus FROM Payments p INNER JOIN Orders o ON p.OrderId = o.OrderId WHERE p.PaymentId = @PaymentId";
+            
+            //T-SQL querty to update the data into Payment Table
+            var updatePaymentStatusQuery = "UPDATE Payments SET Status = @Status WHERE PaymentId = @PaymentId";
+            
+            //Tracks and Stores the response aobut the Payment update process
+            UpdatePaymentResponseDTO updatePaymentResponseDTO = new UpdatePaymentResponseDTO()
+            {
+                PaymentId = paymentId
+            };
+            
+            using (var connection = _connectionFactory.CreateConnection())
+            {
+                await connection.OpenAsync();
+            
+                int orderId;
+                decimal paymentAmount;
+                string currentPaymentStatus, orderStatus;
+                
+                //Fetches current Payment and Order details based on the Payment Id
+                using (var command = new SqlCommand(paymentDetailsQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@PaymentId", paymentId);
+                
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (!reader.Read())
+                        {
+                            //If no data found then it throws the Exception
+                            throw new Exception("Payment record not found.");
+                        }
+                    
+                        //If T-SQL query found the data then it getting the data from the fetched row
+                        orderId = reader.GetInt32(reader.GetOrdinal("OrderId"));
+                        paymentAmount = reader.GetDecimal(reader.GetOrdinal("Amount"));
+                        currentPaymentStatus = reader.GetString(reader.GetOrdinal("Status"));
+                        orderStatus = reader.GetString(reader.GetOrdinal("OrderStatus"));
+                        
+                        //Sets the CurrentStatus in updatePaymentResponseDTO object
+                        updatePaymentResponseDTO.CurrentStatus = currentPaymentStatus;
+                    }
+                }
+
+                //Validate the new status change
+                if (!IsValidStatusTransition(currentPaymentStatus, newStatus, orderStatus))
+                {
+                    updatePaymentResponseDTO.IsUpdated = false;
+
+                    updatePaymentResponseDTO.Message = $"Invalid status transition from {currentPaymentStatus} to {newStatus} for order status {orderStatus}.";
+                
+                    return updatePaymentResponseDTO;
+                }
+
+                // Update the payment status
+                using (var updateCommand = new SqlCommand(updatePaymentStatusQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@PaymentId", paymentId);
+                    updateCommand.Parameters.AddWithValue("@Status", newStatus);
+                
+                    await updateCommand.ExecuteNonQueryAsync();
+                    
+                    updatePaymentResponseDTO.IsUpdated = true;
+                    updatePaymentResponseDTO.UpdatedStatus = newStatus;
+                    updatePaymentResponseDTO.Message = $"Payment Status Updated from {currentPaymentStatus} to {newStatus}";
+                    
+                    return updatePaymentResponseDTO;
+                }
+            }
+        }
+
+        
+        //This method checks if the transition from Old Status to New Status is possible or not
+        private bool IsValidStatusTransition(string currentStatus, string newStatus, string orderStatus)
+        {
+            //Completed payments cannot be modified unless it's a refund for a returned order
+            if (currentStatus == "Completed" && newStatus != "Refund")
+            {
+                return false;
+            }
+
+            //Only pending payments can be cancelled
+            if (currentStatus == "Pending" && newStatus == "Cancelled")
+            {
+                return true;
+            }
+            
+            //Refunds should only be processed for returned orders
+            if (currentStatus == "Completed" && newStatus == "Refund" && orderStatus != "Returned")
+            {
+                return false;
+            }
+            
+            //Payments should only be marked as failed if they are not completed or cancelled
+            if (newStatus == "Failed" && (currentStatus == "Completed" || currentStatus == "Cancelled"))
+            {
+                return false;
+            }
+            
+            //Assuming 'Pending' payments become 'Completed' when the order is shipped or Confirmer
+            if (currentStatus == "Pending" && newStatus == "Completed" && (orderStatus == "Shipped" || orderStatus == "Confirmed"))
+            {
+                return true;
+            }
+            
+            //Can add other rules based on the Business requirements
+            return true;
+        }
     }
 }
+
