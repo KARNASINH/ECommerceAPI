@@ -6,8 +6,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-//Add IConfiguration services to the DI container.
+//Add IConfiguration services to the DI container
 builder.Services.AddTransient<SqlConnectionFactory>();
+
+//Registering the Repositories into DI containers
+builder.Services.AddScoped<CustomerRepository>();
+builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<PaymentRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
