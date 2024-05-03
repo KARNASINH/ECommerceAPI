@@ -17,9 +17,9 @@ namespace ECommerceAPI.Controllers
             _customerRepository = customerRepository;
         }
 
+        //This action method return All Customer. 
         // GET: api/customer
         [HttpGet]
-        //This action method return All Customer. 
         public async Task<APIResponse<List<Customer>>> GetAllCustomers()
         {
             try
