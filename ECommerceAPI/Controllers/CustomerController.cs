@@ -1,4 +1,5 @@
 ﻿using ECommerceAPI.Data;
+using ECommerceAPI.DTO;
 using ECommerceAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -34,7 +35,9 @@ namespace ECommerceAPI.Controllers
                 //Return Errros message along with Status code.
                 return new APIResponse<List<Customer>>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
-        }
+        }    
+        
+
 
         //This end point retrives the Customer details based on the given Customer Id.
         //GET: api/customer/1
@@ -59,6 +62,36 @@ namespace ECommerceAPI.Controllers
             {
                 //If any exception occured then it retuns the reponse with 500 Http status code.
                 return new APIResponse<Customer>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
+
+
+        //This End Point insert a new Customer into database and return the newly generated Customer Id to the client.
+        //POST: api/customer
+        [HttpPost]
+        public async Task<APIResponse<CustomerResponseDTO>> CreateCustomer([FromBody] CustomerDTO customerDto)
+        {
+            //This will check the Model Binding and Validation.
+            if (!ModelState.IsValid)
+            {
+                //This returns the response if the Databinding and Validation is not occured.
+                return new APIResponse<CustomerResponseDTO>(HttpStatusCode.BadRequest, "Invalid data.", ModelState);
+            }
+            try
+            {
+                //Tries to create Customer into the Database.
+                var customerId = await _customerRepository.InsertCustomerAsync(customerDto);
+                
+                //Holds the newly created Customer Id.
+                var responseDTO = new CustomerResponseDTO { CustomerId = customerId };
+
+                //Returns the API End point response with 200 Http status code.
+                return new APIResponse<CustomerResponseDTO>(responseDTO, "Customer Created Successfully.");
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<CustomerResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
         }
 

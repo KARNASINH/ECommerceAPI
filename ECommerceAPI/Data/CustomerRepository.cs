@@ -8,10 +8,14 @@ namespace ECommerceAPI.Data
     {
         //Creates SqlConnectionFactory object to access Database data.
         private readonly SqlConnectionFactory _connectionFactory;
+        
+        
         public CustomerRepository(SqlConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
         }
+
+
 
         //This method will fetch all the Customer data.
         public async Task<List<Customer>> GetAllCustomersAsync()
@@ -48,6 +52,8 @@ namespace ECommerceAPI.Data
             //Returns the List of Customers.
             return customers;
         }
+
+
 
         //This method returns the data based on the specified Custoemr ID.
         public async Task<Customer?> GetCustomerByIdAsync(int customerId)
@@ -87,6 +93,8 @@ namespace ECommerceAPI.Data
             return customer;
         }
 
+
+
         //This method inserts a new Customer and return the created Customer ID
         public async Task<int> InsertCustomerAsync(CustomerDTO customer)
         {
@@ -112,6 +120,8 @@ namespace ECommerceAPI.Data
             }
         }
 
+
+
         //This method updates Customer details in the Database.
         public async Task UpdateCustomerAsync(CustomerDTO customer)
         {
@@ -135,6 +145,8 @@ namespace ECommerceAPI.Data
                 }
             }
         }
+
+
 
         //This method deletes the Customer from the Database.
         public async Task DeleteCustomerAsync(int customerId)
