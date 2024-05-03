@@ -1,8 +1,11 @@
-﻿using ECommerceAPI.Data;
+﻿using Azure;
+using ECommerceAPI.Data;
 using ECommerceAPI.DTO;
 using ECommerceAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Net;
+using static System.Net.WebRequestMethods;
 
 namespace ECommerceAPI.Controllers
 {
@@ -92,6 +95,37 @@ namespace ECommerceAPI.Controllers
             {
                 //If any exception occured then it retuns the reponse with 500 Http status code.
                 return new APIResponse<CustomerResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
+
+
+
+        //This End Point update the existing customer into the database.
+        //PUT: api/customer/1
+        [HttpPut("{id}")]
+        public async Task<APIResponse<bool>> UpdateCustomer(int id, [FromBody] CustomerDTO customerDto)
+        {
+            //This will check the Model Binding and Validation.
+            if (!ModelState.IsValid)
+            {
+                //This returns the response if the Databinding and Validation is not occured.
+                return new APIResponse<bool>(HttpStatusCode.BadRequest, "Invalid data", ModelState);
+            }
+            if (id != customerDto.CustomerId)
+            {
+                //This returns the response if the Customer Id in URL and in Body mismatches.
+                return new APIResponse<bool>(HttpStatusCode.BadRequest, "Mismatched Customer ID.");
+            }
+            try
+            {
+                //This update the Customer and return the 200 Http Status code.
+                await _customerRepository.UpdateCustomerAsync(customerDto);
+                return new APIResponse<bool>(true, "Customer Updated Successfully.");
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<bool>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
         }
 
