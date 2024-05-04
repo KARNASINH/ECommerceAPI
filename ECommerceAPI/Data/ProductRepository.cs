@@ -53,7 +53,7 @@ namespace ECommerceAPI.Data
         public async Task<Product?> GetProductByIdAsync(int productId)
         {
             //T-SQL query to fetch Product if the product exists in the database
-            var query = "SELECT ProductId, Name, Price, Quantity, Description, IsDeleted FROM Products WHERE ProductId = @ProductId AND              IsDeleted = 0";
+            var query = "SELECT ProductId, Name, Price, Quantity, Description, IsDeleted FROM Products WHERE ProductId = @ProductId AND IsDeleted = 0";
 
             Product? product = null;
 
