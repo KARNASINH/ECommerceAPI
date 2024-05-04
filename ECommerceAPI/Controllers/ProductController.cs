@@ -97,5 +97,37 @@ namespace ECommerceAPI.Controllers
                 return new APIResponse<ProductResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
         }
+
+
+        //This End Point updates Product's details into Database.
+        //PUT: api/product/5
+        [HttpPut("{id}")]
+        public async Task<APIResponse<bool>> UpdateProduct(int id, [FromBody] ProductDTO product)
+        {
+            //This will check the Model Binding and Validation.
+            if (!ModelState.IsValid)
+            {
+                //This returns the response if the Databinding and Validation fails.
+                return new APIResponse<bool>(HttpStatusCode.BadRequest, "Invalid data", ModelState);
+            }
+
+            if (id != product.ProductId)
+            {
+                //This returns the response if the Product Id in URL and in Body mismatches.
+                return new APIResponse<bool>(HttpStatusCode.BadRequest, "Mismatched product ID");
+            }
+
+            try
+            {
+                //This update the Product and return the 200 Http Status code.
+                await _productRepository.UpdateProductAsync(product);
+                return new APIResponse<bool>(true, "Product updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<bool>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
     }
 }

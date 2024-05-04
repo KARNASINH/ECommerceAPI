@@ -108,7 +108,7 @@ namespace ECommerceAPI.Controllers
             //This will check the Model Binding and Validation.
             if (!ModelState.IsValid)
             {
-                //This returns the response if the Databinding and Validation is not occured.
+                //This returns the response if the Databinding and Validation fails.
                 return new APIResponse<bool>(HttpStatusCode.BadRequest, "Invalid data", ModelState);
             }
             if (id != customerDto.CustomerId)
