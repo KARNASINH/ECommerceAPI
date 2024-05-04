@@ -96,5 +96,41 @@ namespace ECommerceAPI.Controllers
                 return new APIResponse<CreateOrderResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
         }
+
+
+
+        //This End Point updates Order's details into Database.
+        //PUT: api/order/2/status
+        [HttpPut("{id}/status")]
+        public async Task<APIResponse<OrderStatusResponseDTO>> UpdateOrderStatus(int id, [FromBody] OrderStatusDTO status)
+        {
+            //This will check the Model Binding and Validation.
+            if (!ModelState.IsValid)
+            {
+                //This returns the response if the Databinding and Validation fails.
+                return new APIResponse<OrderStatusResponseDTO>(HttpStatusCode.BadRequest, "Invalid data", ModelState);
+            }
+
+            //Checks Order Id passed in URL is matched to Id passed in Http Request Body or not.
+            if (id != status.OrderId)
+            {
+                //This returns the response if the Order Id in URL and in Body mismatches.
+                return new APIResponse<OrderStatusResponseDTO>(HttpStatusCode.BadRequest, "Mismatched Order ID");
+            }
+            
+            try
+            {
+                //This tries to update the Old order status with the new status.
+                var response = await _orderRepository.UpdateOrderStatusAsync(id, status.Status);
+
+                //This updates the Order and return the 200 Http Status code along with Order Response object.
+                return new APIResponse<OrderStatusResponseDTO>(response, response.Message);
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<OrderStatusResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
     }
 }

@@ -121,7 +121,7 @@ namespace ECommerceAPI.Controllers
 
             try
             {
-                //This update the Product and return the 200 Http Status code.
+                //This updates the Product and return the 200 Http Status code.
                 await _productRepository.UpdateProductAsync(product);
                 return new APIResponse<bool>(true, "Product updated successfully.");
             }
