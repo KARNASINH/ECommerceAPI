@@ -1,4 +1,5 @@
 ﻿using ECommerceAPI.Data;
+using ECommerceAPI.DTO;
 using ECommerceAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -63,6 +64,36 @@ namespace ECommerceAPI.Controllers
             {
                 //If any exception occured then it retuns the reponse with 500 Http status code.
                 return new APIResponse<Order>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
+
+
+
+
+        //This End Point insert a Order into Database to make it available for the customer.
+        //POST: api/order
+        [HttpPost]
+        public async Task<APIResponse<CreateOrderResponseDTO>> CreateOrder([FromBody] OrderDTO orderDto)
+        {
+            //This will perform Model Binding and Validation on the recevied data from the Http request body.
+            if (!ModelState.IsValid)
+            {
+                //Returns the response with 400 Http status code.
+                return new APIResponse<CreateOrderResponseDTO>(HttpStatusCode.BadRequest, "Invalid data", ModelState);
+            }
+            try
+            {
+
+                //This will insert the Order in the database and will return the inserted Order details.
+                var response = await _orderRepository.CreateOrderAsync(orderDto);
+
+                //Returns the newly created Order Id along with 200 Http status code.
+                return new APIResponse<CreateOrderResponseDTO>(response, response.Message);
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<CreateOrderResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
         }
     }
