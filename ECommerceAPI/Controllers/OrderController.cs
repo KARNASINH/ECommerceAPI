@@ -99,6 +99,7 @@ namespace ECommerceAPI.Controllers
 
 
 
+
         //This End Point updates Order's details into Database.
         //PUT: api/order/2/status
         [HttpPut("{id}/status")]
@@ -130,6 +131,28 @@ namespace ECommerceAPI.Controllers
             {
                 //If any exception occured then it retuns the reponse with 500 Http status code.
                 return new APIResponse<OrderStatusResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
+
+
+
+        //This End point confirms the Order if evverything is okay with Order iteam availablility, quantity, payment etc.
+        // PUT: api/order/5/confirm
+        [HttpPut("{id}/confirm")]
+        public async Task<APIResponse<ConfirmOrderResponseDTO>> ConfirmOrder(int id)
+        {
+            try
+            {
+                //This updates the Order status from old to new.
+                var response = await _orderRepository.ConfirmOrderAsync(id);
+
+                //Returns the response with some order details along with 200 Http status code.
+                return new APIResponse<ConfirmOrderResponseDTO>(response, response.Message);
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<ConfirmOrderResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
         }
     }
