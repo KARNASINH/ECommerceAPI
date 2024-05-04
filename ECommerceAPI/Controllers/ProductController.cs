@@ -51,7 +51,7 @@ namespace ECommerceAPI.Controllers
                 //Retrives the product from the database for the given product id.
                 var product = await _productRepository.GetProductByIdAsync(id);
 
-                //Return 404 Http status code if the product does not found.
+                //Check Product has any data or not.
                 if (product == null)
                 {
                     //Return the response with 404 Http status code if the Product doesn't found in the database.
