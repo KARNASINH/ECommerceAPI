@@ -35,7 +35,7 @@ namespace ECommerceAPI.Controllers
             }
             catch (Exception ex)
             {
-                //Return Errros message along with Status code.
+                //Return Errros message along with 500 Status code.
                 return new APIResponse<List<Customer>>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
         }
