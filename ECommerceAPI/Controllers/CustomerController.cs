@@ -38,8 +38,8 @@ namespace ECommerceAPI.Controllers
                 //Return Errros message along with Status code.
                 return new APIResponse<List<Customer>>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
-        }    
-        
+        }
+
 
 
         //This end point retrives the Customer details based on the given Customer Id.
@@ -52,16 +52,16 @@ namespace ECommerceAPI.Controllers
                 //Fetches the Customer data from the database.
                 var customer = await _customerRepository.GetCustomerByIdAsync(id);
 
-                if(customer == null)
+                if (customer == null)
                 {
                     //If customer not found in the Database it returns the reponse with 404 Http Status code.
-                    return new APIResponse<Customer>(HttpStatusCode.NotFound,"Customer not found for the given Custoemr Id.");
+                    return new APIResponse<Customer>(HttpStatusCode.NotFound, "Customer not found for the given Custoemr Id.");
                 }
 
                 //If customer founds then return the reponse with 200 Http Statu code.
                 return new APIResponse<Customer>(customer, "Custome retrived successfully.");
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 //If any exception occured then it retuns the reponse with 500 Http status code.
                 return new APIResponse<Customer>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
@@ -84,7 +84,7 @@ namespace ECommerceAPI.Controllers
             {
                 //Tries to create Customer into the Database.
                 var customerId = await _customerRepository.InsertCustomerAsync(customerDto);
-                
+
                 //Holds the newly created Customer Id.
                 var responseDTO = new CustomerResponseDTO { CustomerId = customerId };
 
@@ -129,5 +129,36 @@ namespace ECommerceAPI.Controllers
             }
         }
 
+
+        //This End Point do a Soft Delete for the existing customer into database.
+        //DELETE: api/customer/2
+        [HttpDelete("{id}")]
+        public async Task<APIResponse<bool>> DeleteCustomer(int id)
+        {
+            try
+            {
+                //This will fetche the CUstomer details if exists.
+                var customer = await _customerRepository.GetCustomerByIdAsync(id);
+                
+                //Check the customer is exists into database or not.
+                if (customer == null)
+                {
+                    //Returns the API End point response with 404 Http status code.
+                    return new APIResponse<bool>(HttpStatusCode.NotFound, "Customer not found.");
+                }
+
+                //If customer exists in the database then it perform the Soft Delete into the database.
+                await _customerRepository.DeleteCustomerAsync(id);
+
+                //Returns the API End point response with 200 Http status code.
+                return new APIResponse<bool>(true, "Customer deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<bool>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
     }
 }
+
