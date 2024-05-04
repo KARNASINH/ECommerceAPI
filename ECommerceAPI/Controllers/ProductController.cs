@@ -68,6 +68,7 @@ namespace ECommerceAPI.Controllers
         }
 
 
+
         //This End Point insert a Product into Database to make it available for the customer.
         //POST: api/product
         [HttpPost]
@@ -99,6 +100,7 @@ namespace ECommerceAPI.Controllers
         }
 
 
+
         //This End Point updates Product's details into Database.
         //PUT: api/product/5
         [HttpPut("{id}")]
@@ -122,6 +124,37 @@ namespace ECommerceAPI.Controllers
                 //This update the Product and return the 200 Http Status code.
                 await _productRepository.UpdateProductAsync(product);
                 return new APIResponse<bool>(true, "Product updated successfully.");
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<bool>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
+
+
+        //This End Point do a Soft Delete for the existing Product into database.
+        // DELETE: api/product/5
+        [HttpDelete("{id}")]
+        public async Task<APIResponse<bool>> DeleteProduct(int id)
+        {
+            try
+            {
+                //This will fetche the Product details if exists.
+                var product = await _productRepository.GetProductByIdAsync(id);
+
+                //Check the Product exists into database or not.
+                if (product == null)
+                {
+                    //Returns the API End point response with 404 Http status code.
+                    return new APIResponse<bool>(HttpStatusCode.NotFound, "Product not found.");
+                }
+
+                //If Product exists in the database then it perform the Soft Delete into the database.
+                await _productRepository.DeleteProductAsync(id);
+
+                //Returns the API End point response with 200 Http status code.
+                return new APIResponse<bool>(true, "Product deleted successfully.");
             }
             catch (Exception ex)
             {

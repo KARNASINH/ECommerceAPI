@@ -137,10 +137,10 @@ namespace ECommerceAPI.Controllers
         {
             try
             {
-                //This will fetche the CUstomer details if exists.
+                //This will fetche the Customer details if exists.
                 var customer = await _customerRepository.GetCustomerByIdAsync(id);
                 
-                //Check the customer is exists into database or not.
+                //Check the customer exists into database or not.
                 if (customer == null)
                 {
                     //Returns the API End point response with 404 Http status code.
