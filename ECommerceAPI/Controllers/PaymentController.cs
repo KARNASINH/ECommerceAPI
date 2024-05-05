@@ -71,6 +71,38 @@ namespace ECommerceAPI.Controllers
             }
         }
 
+        //This End Point updates the Payment Status into database.
+        //PUT: api/payment/updatepaymentstatus/5
+        [HttpPut("UpdatePaymentStatus/{id}")]
+        public async Task<APIResponse<UpdatePaymentResponseDTO>> UpdatePaymentStatus(int id, [FromBody] UpdatePaymentDTO updatePaymentStatusDTO)
+        {
+            //This will check the Model Binding and Validation.
+            if (!ModelState.IsValid)
+            {
+                //This returns the response if the Databinding and Validation fails along with 400 Http status code.
+                return new APIResponse<UpdatePaymentResponseDTO>(HttpStatusCode.BadRequest, "Invalid data", ModelState);
+            }
+            
+            if (id != updatePaymentStatusDTO.PaymentId)
+            {
+                //Checks Payment Id passed in URL is matched to Id passed in Http Request Body or not.
+                return new APIResponse<UpdatePaymentResponseDTO>(HttpStatusCode.BadRequest, "Mismatched Payment ID");
+            }
+
+            try
+            {
+                //This tries to update the Old Payment status with the new status.
+                var response = await _paymentRepository.UpdatePaymentStatusAsync(id,updatePaymentStatusDTO.Status);
+
+                //This updates the Payment and returns Payment Response object along with 200 Http Status code.
+                return new APIResponse<UpdatePaymentResponseDTO>(response, response.Message);
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<UpdatePaymentResponseDTO>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
 
     }
 }
