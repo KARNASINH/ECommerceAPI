@@ -1,4 +1,5 @@
 ﻿using ECommerceAPI.Data;
+using ECommerceAPI.DTO;
 using ECommerceAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -43,5 +44,33 @@ namespace ECommerceAPI.Controllers
                 return new APIResponse<Payment>(HttpStatusCode.InternalServerError, "Internal server error: " + ex.Message);
             }
         }
+
+        //This End Point insert a Payment into Database.
+        //POST: api/payment/makepayment
+        [HttpPost("MakePayment")]
+        public async Task<APIResponse<PaymentResponseDTO>> MakePayment([FromBody] PaymentDTO paymentDto)
+        {
+            //This will perform Model Binding and Validation on the recevied data from the Http request body.
+            if (!ModelState.IsValid)
+            {
+                //Returns the response with 400 Http status code.
+                return new APIResponse<PaymentResponseDTO>(HttpStatusCode.BadRequest, "Invalid Data", ModelState);
+            }
+            try
+            {
+                //This will insert the Payment in the database and will return the inserted Payment details.
+                var response = await _paymentRepository.MakePaymentAsync(paymentDto);
+
+                //Returns the newly created Payment Details along with 200 Http status code.
+                return new APIResponse<PaymentResponseDTO>(response, response.Message);
+            }
+            catch (Exception ex)
+            {
+                //If any exception occured then it retuns the reponse with 500 Http status code.
+                return new APIResponse<PaymentResponseDTO>(HttpStatusCode.InternalServerError, "Internal Server Error: " + ex.Message);
+            }
+        }
+
+
     }
 }
